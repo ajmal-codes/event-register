@@ -27,7 +27,7 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
   const [count, setCount] = useState(0);
 
   return (
-    <div className="relative w-full rounded-[2rem] bg-gradient-to-br from-[#7B2FF2] to-[#F357A8]  shadow-lg h-[420px] flex flex-col">
+    <div className="relative w-full rounded-[2rem] bg-gradient-to-br from-[#7B2FF2] to-[#F357A8]  shadow-lg h-full flex flex-col">
       <div className="rounded-[2rem] bg-[#231F20] flex-1 flex flex-col">
         {/* Header */}
         {/* <div className="rounded-t-[2rem] px-8 py-6 bg-gradient-to-r from-[#7B2FF2] to-[#F357A8] bg-[url('/images/card_header_pattern.png')] bg-blend-overlay bg-cover bg-center"> */}
@@ -126,7 +126,7 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
 const FreeEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
   const router = useRouter();
   return (
-    <div className="relative rounded-[2rem] bg-gradient-to-br from-[#FF512F] to-[#F09819] shadow-lg w-full h-[420px] flex flex-col">
+    <div className="relative rounded-[2rem] bg-gradient-to-br from-[#FF512F] to-[#F09819] shadow-lg w-full   h-full flex flex-col">
       <div className="rounded-[2rem] bg-[#231F20] flex-1 flex flex-col">
         {/* Header */}
         <div
