@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useSelector } from "react-redux";
 
 const ticketTypes = [
   { id: "visitor-pass", name: "Visitor Pass", price: 0 },
@@ -82,11 +83,58 @@ export default function RegistrationSummary({
 }) {
   const [promoCode, setPromoCode] = useState("");
   const [activePromo, setActivePromo] = useState(null);
+  const { selectedCards, totalPrice } = useSelector((state) => state.order);
+
+  // Calculate discounted price based on promo code
+  const { discountedTotal, appliedDiscount, discountedItems } = useMemo(() => {
+    if (!activePromo) {
+      return { discountedTotal: totalPrice, appliedDiscount: 0, discountedItems: [] };
+    }
+
+    let discountAmount = 0;
+    let affectedItems = [];
+
+    if (activePromo.type === "percentage") {
+      if (activePromo.applies === "2 lowest-priced tickets") {
+        // Sort cards by price and get the 2 lowest priced
+        const sortedCards = [...selectedCards]
+          .sort((a, b) => a.price - b.price)
+          .filter(card => card.price > 0)
+          .slice(0, 2);
+
+        sortedCards.forEach(card => {
+          const itemDiscount = (card.price * card.count * activePromo.discount) / 100;
+          discountAmount += itemDiscount;
+          affectedItems.push({
+            name: card.name,
+            originalPrice: card.price * card.count,
+            discount: itemDiscount
+          });
+        });
+      }
+    } else if (activePromo.type === "fixed") {
+      // Fixed amount discount on total
+      discountAmount = Math.min(activePromo.discount, totalPrice);
+      affectedItems.push({
+        name: "Total Order",
+        originalPrice: totalPrice,
+        discount: discountAmount
+      });
+    }
+
+    return {
+      discountedTotal: Math.max(0, totalPrice - discountAmount),
+      appliedDiscount: discountAmount,
+      discountedItems: affectedItems
+    };
+  }, [activePromo, selectedCards, totalPrice]);
 
   const handleApplyPromoCode = () => {
-    if (promoCodes[promoCode.toUpperCase()]) {
-      setActivePromo(promoCodes[promoCode.toUpperCase()]);
+    const promo = promoCodes[promoCode.toUpperCase()];
+    if (promo) {
+      setActivePromo(promo);
     } else {
+      alert("Invalid promo code");
       setActivePromo(null);
     }
   };
@@ -111,18 +159,22 @@ export default function RegistrationSummary({
         </div>
 
         <div className="">
-          {activePromo && (
-            <div>
-              <div className="border-s-3 bg-[#F0FFF0]  py-2 px-3 my-6 border-[#26903B] flex items-start justify-between">
+          {selectedCards.filter(card => card.count > 0 && discountedItems.find(item => item.name === card.name)).map((card) => (
+            <div key={card.id}>
+              <div className="border-s-3 bg-[#F0FFF0] py-2 px-3 my-6 border-[#26903B] flex items-start justify-between">
                 <div className="text-sm font-[500] text-gray-900">
-                  {priceList[0].label}
+                  {card.name} x {card.count}
                 </div>
                 <div className="font-[500] text-gray-900">
                   <div className="text-[#898787] text-sm line-through">
-                    FREE {priceList[0].value}
+                    EUR {(card.price * card.count).toFixed(2)}
                   </div>
                   <div className="text-[#198754] flex items-center gap-1">
-                    <span>FREE{priceList[0].value} </span>
+                    <span>
+                      EUR {((card.price * card.count) - 
+                        (discountedItems.find(item => item.name === card.name)?.discount || 0)
+                      ).toFixed(2)}
+                    </span>
                     <span className="text-white bg-[#26903B] rounded px-[0.3rem] py-[0.1rem] text-[0.7rem] font-bold me-2">
                       -{activePromo.discount}%
                     </span>
@@ -133,7 +185,7 @@ export default function RegistrationSummary({
                 </div>
               </div>
             </div>
-          )}
+          ))}
           {activePromo && (
             <div className="bg-[#F0FFF0] rounded-lg py-6 px-3 my-6 border border-[#26903B] flex flex-col gap-4">
               <h3 className="text-lg font-semibold text-[#26923B] ">
@@ -156,27 +208,26 @@ export default function RegistrationSummary({
                 </button>
               </div>
               <div className="text-[1rem] text-[#26923B]">
-                Promo code "{activePromo.code}" applied successfully! Applied to
-                2 lowest-priced tickets!
+                Promo code "{activePromo.code}" applied successfully! {activePromo.applies === "2 lowest-priced tickets" ? "Applied to 2 lowest-priced tickets!" : "Applied to total price!"}
               </div>
               <div
                 className={`w-full border text-sm rounded-lg p-5 border-[#DEE2E630] bg-white flex gap-2 items-center justify-between`}
               >
                 <div className="flex flex-col gap-1">
-                  <div className=" font-[500] text-gray-900">
+                  <div className="font-[500] text-gray-900">
                     Promo code applied:{" "}
-                    <span className="text-[#198754]">GITEX15</span>
+                    <span className="text-[#198754]">{activePromo.code}</span>
                   </div>
-                  <div className=" font-[500] text-gray-900">
-                    Promo code applied:{" "}
+                  <div className="font-[500] text-gray-900">
+                    Discount value:{" "}
                     <span className="text-[#198754]">
-                      15% (EUR 0.06 incl. VAT)
+                      {activePromo.type === "percentage" ? `${activePromo.discount}%` : `EUR ${activePromo.discount}`} (EUR {appliedDiscount.toFixed(2)} incl. VAT)
                     </span>
                   </div>
-                  <div className=" font-[500] text-gray-900">
+                  <div className="font-[500] text-gray-900">
                     Applied to:{" "}
                     <span className="text-[#198754]">
-                      2 lowest-priced tickets
+                      {activePromo.applies}
                     </span>
                   </div>
                 </div>
@@ -190,21 +241,32 @@ export default function RegistrationSummary({
             </div>
           )}
           <div>
-            {(!activePromo ? priceList : priceList.slice(1)).map(
-              (item, index) => (
-                <div
-                  className="border-b border-[#EBEBEB] pt-6 pb-1 flex items-center justify-between"
-                  key={index}
-                >
-                  <div className="text-lg font-[500] text-gray-900">
-                    {item.label}
-                  </div>
-                  <div className="text-lg font-[500] text-gray-900">
-                    {item.value}
-                  </div>
+            {selectedCards.filter(card => 
+              card.count > 0 && 
+              (!activePromo || !discountedItems.find(item => item.name === card.name))
+            ).map((card) => (
+              <div
+                className="border-b border-[#EBEBEB] pt-6 pb-1 flex items-center justify-between"
+                key={card.id}
+              >
+                <div className="text-lg font-[500] text-gray-900">
+                  {card.name} x {card.count}
                 </div>
-              )
-            )}
+                <div className="text-lg font-[500] text-gray-900">
+                  {card.price > 0 ? `EUR ${(card.price * card.count).toFixed(2)}` : "FREE"}
+                </div>
+              </div>
+            ))}
+            {/* {activePromo && (
+              <div className="border-b border-[#EBEBEB] pt-6 pb-1 flex items-center justify-between text-[#198754]">
+                <div className="text-lg font-[500]">
+                  Discount ({activePromo.code})
+                </div>
+                <div className="text-lg font-[500]">
+                  -EUR {appliedDiscount.toFixed(2)}
+                </div>
+              </div>
+            )} */}
           </div>
           {/* Pricing Summary */}
           {!activePromo && (
@@ -236,11 +298,11 @@ export default function RegistrationSummary({
               <span className="text-[1rem]">Total:</span>{" "}
               {activePromo ? (
                 <>
-                  <span className="line-through text-[#808080]">EUR 300</span>{" "}
-                  <span> EUR 150</span>
+                  <span className="line-through text-[#808080]">EUR {totalPrice.toFixed(2)}</span>{" "}
+                  <span>EUR {discountedTotal.toFixed(2)}</span>
                 </>
               ) : (
-                <span>EUR 300</span>
+                <span>EUR {totalPrice.toFixed(2)}</span>
               )}{" "}
               <span className="text-xs text-[#808080] font-normal">
                 {" "}

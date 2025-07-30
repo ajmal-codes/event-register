@@ -1,6 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import EventImage from "@/../../public/images/event_card_image.png";
+import Image from "next/image";
+import { useDispatch, useSelector } from "react-redux";
+import { addCard, removeCard, incrementCount, decrementCount } from "@/store/reducers/orderSlice";
 
 const FEATURES = [
   "Access to ConneXions & Investor Lounge",
@@ -23,9 +27,18 @@ const EventCard = ({ type = "free", ...props }) => {
   );
 };
 
-const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
-  const [count, setCount] = useState(0);
+const PaidEventCard = (props) => {
+  const { colorCodes = ["#7B2FF2", "#F357A8"],oldPrice,price=10,name }=props
+  const dispatch = useDispatch();
+  const { selectedCards } = useSelector((state) => state.order);
+  const cardData = selectedCards.find(card => card.id === props.id);
+  const count = cardData?.count || 0;
+  const [showCounter, setShowCounter] = useState(count > 0);
 
+  const handleBuy = ()=>{
+    setShowCounter(true)
+    dispatch(addCard({ id: props.id, name: props.name, type: "paid", price: price }))
+  }
   return (
     <div className="relative w-full rounded-[2rem] bg-gradient-to-br from-[#7B2FF2] to-[#F357A8]  shadow-lg h-full flex flex-col">
       <div className="rounded-[2rem] bg-[#231F20] flex-1 flex flex-col">
@@ -58,14 +71,14 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
               <span className="text-[#3DF57A] font-semibold">
                 3 DAYS ACCESS
               </span>{" "}
-              to GITEX NIGERIA exhibition and all free conference
+              to {name} and all free conference
             </div>
-            <div className="flex items-center gap-4 mt-6">
-              <img src="/public/file.svg" alt="GITEX" className="h-8" />
-              <img
-                src="/public/globe.svg"
-                alt="AI Everything"
-                className="h-8"
+            <div className=" mt-6">
+              {/* <img src="/images/event_card_image.png" alt="GITEX" className="h-8" /> */}
+              <Image
+                src={EventImage}
+                alt="Event Image"
+                className="w-auto md:min-w-[160px] h-auto"
               />
             </div>
           </div>
@@ -74,8 +87,8 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
             <div className="flex items-center justify-between pt-4 min-h-[52px]">
               <div className="flex items-center gap-1">
                 <span className="text-white text-sm font-bold">USD</span>
-                <div className="text-white text-sm  font-bold relative min-w-[30px]">
-                  <span className="opacity-60">43</span>
+                {oldPrice&&<div className="text-white text-sm  font-bold relative min-w-[30px]">
+                  {<span className="opacity-60">{oldPrice}</span>}
                   <svg
                     className="absolute left-[-9px] bottom-[-4px]"
                     width="40"
@@ -90,31 +103,43 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
                       fillOpacity="0.75"
                     />
                   </svg>
-                </div>
+                </div>}
                 <span className="bg-black text-white font-bold border-[0.5px] border-[#ffffff70] px-1 rounded ">
-                  32.5
+                  {price}
                 </span>
                 <span className="text-white text-xs opacity-90">
                   Incl. 20% VAT
                 </span>
               </div>
+              
+              {showCounter?
               <div className="flex items-center gap-2 bg-[#18171A] rounded-[4.18px] px-2 border-[1px] border-[#ffffff70]">
                 <button
-                  onClick={() => setCount(Math.max(0, count - 1))}
+                  onClick={() => {
+                      dispatch(decrementCount(props.id));
+                  }}
                   className="text-white text-sm cursor-pointer"
                 >
                   -
                 </button>
-                <span className="text-black bg-white text-xs h-full py-1 px-[0.7rem]">
+                <span className="text-black min-w-8 bg-white text-xs h-full py-1 px-[0.7rem]">
                   {count}
                 </span>
                 <button
-                  onClick={() => setCount(count + 1)}
+                  onClick={() => dispatch(incrementCount(props.id))}
                   className="text-white text-sm cursor-pointer"
                 >
                   +
                 </button>
               </div>
+              :
+              <button
+                onClick={handleBuy}
+                className="bg-white text-black text-sm font-bold px-5 py-2 rounded-lg shadow cursor-pointer"
+              >
+                BUY NOW
+              </button>
+}
             </div>
           </div>
         </div>
@@ -123,8 +148,18 @@ const PaidEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
   );
 };
 
-const FreeEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
-  const router = useRouter();
+const FreeEventCard = (props) => {
+  const { colorCodes = ["#7B2FF2", "#F357A8"],oldPrice,price=10,name }=props
+  const dispatch = useDispatch();
+  const { selectedCards } = useSelector((state) => state.order);
+  const cardData = selectedCards.find(card => card.id === props.id);
+  const count = cardData?.count || 0;
+  const [showCounter, setShowCounter] = useState(count > 0);
+
+  const handleBuy = ()=>{
+    setShowCounter(true)
+    dispatch(addCard({ id: props.id, name: props.name, type: "free", price: 0 }))
+  }
   return (
     <div className="relative rounded-[2rem] bg-gradient-to-br from-[#FF512F] to-[#F09819] shadow-lg w-full   h-full flex flex-col">
       <div className="rounded-[2rem] bg-[#231F20] flex-1 flex flex-col">
@@ -156,7 +191,7 @@ const FreeEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
               <span className="text-[#3DF57A] font-semibold">
                 3 DAYS ACCESS
               </span>{" "}
-              to GITEX NIGERIA exhibition and all free conference
+              to {name} and all free conference
             </div>
             <ul className=" mt-4 flex flex-wrap gap-x-2 gap-y-[0.45rem]">
               {FEATURES.map((feature, index) => (
@@ -221,13 +256,35 @@ const FreeEventCard = ({ colorCodes = ["#7B2FF2", "#F357A8"] }) => {
                 <span className="text-white text-xs opacity-60">
                   INCL. 19% VAT
                 </span>
+              </div> 
+              {showCounter?
+              <div className="flex items-center gap-2 bg-[#18171A] rounded-[4.18px] px-2 border-[1px] border-[#ffffff70]">
+                <button
+                  onClick={() => {
+                      dispatch(decrementCount(props.id));
+                  }}
+                  className="text-white text-sm cursor-pointer"
+                >
+                  -
+                </button>
+                <span className="text-black min-w-8 bg-white text-xs h-full py-1 px-[0.7rem]">
+                  {count}
+                </span>
+                <button
+                  onClick={() => dispatch(incrementCount(props.id))}
+                  className="text-white text-sm cursor-pointer"
+                >
+                  +
+                </button>
               </div>
+              :
               <button
-                onClick={() => router.push("/registration")}
+                onClick={handleBuy}
                 className="bg-white text-black text-sm font-bold px-5 py-2 rounded-lg shadow cursor-pointer"
               >
                 BUY NOW
               </button>
+}
             </div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { selectCurrentStep, setCurrentStep } from "@/store/reducers/formSlice";
 import RegistrationForm from "./steps/RegistrationForm";
 import RegistrationSummary from "./steps/RegistrationSummary";
 import ThankYou from "./steps/ThankYou";
@@ -60,11 +62,16 @@ export default function Registration() {
     }));
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const nextStep = () => {
     const stepOrder = Object.values(STEPS);
     const currentIndex = stepOrder.indexOf(currentStep);
     if (currentIndex < stepOrder.length - 1) {
       setCurrentStep(stepOrder[currentIndex + 1]);
+      scrollToTop();
     }
   };
 
@@ -73,11 +80,13 @@ export default function Registration() {
     const currentIndex = stepOrder.indexOf(currentStep);
     if (currentIndex > 0) {
       setCurrentStep(stepOrder[currentIndex - 1]);
+      scrollToTop();
     }
   };
 
   const goToStep = (step) => {
     setCurrentStep(step);
+    scrollToTop();
   };
 
   const getStepNumber = () => {
@@ -94,41 +103,29 @@ export default function Registration() {
       case STEPS.REGISTRATION_FORM:
         return (
           <RegistrationForm
+            formName={"formOne"}
+            validations={"all"}
             hasPrev={getStepNumber() > 1}
-            formData={formData.personalInfo}
-            onUpdate={(data) => updateFormData("personalInfo", data)}
             onNext={nextStep}
             onPrev={prevStep}
-            onShowSolutions={() => setShowSolutionsModal(true)}
-            selectedWorkshops={formData.selectedWorkshops}
-            selectedSolutions={formData.selectedSolutions}
-            selectedSubSolutions={formData.selectedSubSolutions}
           />
         );
       case STEPS.REGISTRATION_FORM2:
         return (
           <RegistrationForm
-            formData={formData.personalInfo}
-            onUpdate={(data) => updateFormData("personalInfo", data)}
+            formName={"formTwo"}
             onNext={nextStep}
             onPrev={prevStep}
-            onShowSolutions={() => setShowSolutionsModal(true)}
-            selectedWorkshops={formData.selectedWorkshops}
-            selectedSolutions={formData.selectedSolutions}
-            selectedSubSolutions={formData.selectedSubSolutions}
+            validations={['firstName', 'lastName']}
           />
         );
       case STEPS.REGISTRATION_FORM3:
         return (
           <RegistrationForm
-            formData={formData.personalInfo}
-            onUpdate={(data) => updateFormData("personalInfo", data)}
+            formName={"formThree"}
             onNext={nextStep}
             onPrev={prevStep}
-            onShowSolutions={() => setShowSolutionsModal(true)}
-            selectedWorkshops={formData.selectedWorkshops}
-            selectedSolutions={formData.selectedSolutions}
-            selectedSubSolutions={formData.selectedSubSolutions}
+            // validations={['email', 'confirmEmail', 'phone']}
           />
         );
       case STEPS.REGISTRATION_SUMMARY:
@@ -153,8 +150,8 @@ export default function Registration() {
 
       <div className="bg-white bg-[top_center] bg-contain bg-no-repeat relative ">
         <Image src={HeaderImg} alt="Header" className="w-full h-auto" />
-        <div class="flex justify-center absolute w-full h-full top-0 bottom-0 left-0 right-0 items-center">
-          <button class="bg-green-500 cursor-pointer hover:bg-green-600 text-black font-bold min-w-[15rem] h-fill text-2xl tracking-wider transition-colors duration-200">
+        <div className="flex justify-center absolute w-full h-full top-0 bottom-0 left-0 right-0 items-center">
+          <button className="bg-green-500 cursor-pointer hover:bg-green-600 text-black font-bold min-w-[15rem] h-fill text-2xl tracking-wider transition-colors duration-200">
             <Image src={LoginBtn} alt="Header" className="w-full h-auto" />
           </button>
         </div>
